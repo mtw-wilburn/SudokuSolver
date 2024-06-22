@@ -56,6 +56,76 @@ pub fn get_box(idx: usize, board: &Vec<u8>) -> Vec<u8> {
     v
 }
 
+pub fn test_for_one_in_row(idx: usize, set: &HashSet<u8>, board: &Vec<u8>) -> Option<u8> {
+    let b = idx - (idx % 9);
+    let e = b + 9;
+    let mut ret = None;
+    for v in set.iter() {
+        let mut found = true;
+        for i in b..e {
+            if i == idx {
+                continue;
+            }
+            if board[i] != 0u8 {
+                continue;
+            }
+            if posibilities(i, board).contains(v) {
+                found = false;
+                break;
+            }
+        }
+        if found {
+            ret = Some(*v);
+            break;
+        }
+    }
+    ret
+}
+
+pub fn test_for_one_in_col(idx: usize, set: &HashSet<u8>, board: &Vec<u8>) -> Option<u8> {
+    let offset = idx % 9;
+
+    let mut ret = None;
+    for v in set.iter() {
+        let mut found = true;
+        for i in 0..9 {
+            if i == offset {
+                continue;
+            }
+            if board[offset + (i * 9)] != 0u8 {
+                continue;
+            }
+            if posibilities(offset + (i * 9), board).contains(v) {
+                found = false;
+                break;
+            }
+        }
+        if found {
+            ret = Some(*v);
+            break;
+        }
+    }
+    ret
+}
+
+pub fn test_col(idx: usize, val: u8, board: &Vec<u8>) -> bool {
+    let offset = idx % 9;
+
+    let mut ret = true;
+    for i in 0..9 {
+        let ci = offset + (i * 9);
+        if idx == ci {
+            continue;
+        }
+        let p = posibilities(ci, board);
+        if p.contains(&val) {
+            ret = false;
+            break;
+        }
+    }
+    ret
+}
+
 pub fn posibilities(idx: usize, board: &Vec<u8>) -> HashSet<u8> {
     let mut hs: HashSet<u8> = vec![1u8, 2, 3, 4, 5, 6, 7, 8, 9].into_iter().collect();
     for x in &get_row(idx, board) {
