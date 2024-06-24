@@ -1,6 +1,4 @@
 use board::*;
-use std::collections::HashMap;
-use std::collections::HashSet;
 
 fn main() {
     #![allow(unused_variables)]
@@ -43,131 +41,33 @@ fn main() {
         vec!['.', '2', '9', '.', '.', '.', '.', '5', '8'],
     ];
 
-    let vals = vals3;
+    let mut puzzle = Puzzle::new(&vals1);
+    puzzle.solve();
 
-    let mut board = create_board(&vals);
-    let mut hs: HashMap<u8, HashSet<u8>> = HashMap::new();
+    println!("Solving difficult puzzle");
+    puzzle.prn_in();
+    println!("");
+    puzzle.prn_board();
 
-    for i in 0..81 {
-        if board[i] == 0 {
-            hs.insert(i as u8, posibilities(i, &board));
-        }
-    }
+    puzzle = Puzzle::new(&vals2);
+    puzzle.solve();
 
-    let mut stuck: bool = false;
-    while hs.len() > 0 {
-        stuck = true;
-        for (k, h) in &hs {
-            if h.len() == 1 {
-                let v = h.into_iter().collect::<Vec<_>>();
-                board[*k as usize] = *v[0];
-                stuck = false
-            }
-        }
-        hs.clear();
+    println!("");
+    println!("Solving expert puzzle");
+    puzzle.prn_in();
+    println!("");
+    puzzle.prn_board();
 
-        for i in 0..81 {
-            if board[i] == 0 {
-                hs.insert(i as u8, posibilities(i, &board));
-            }
-        }
+    puzzle = Puzzle::new(&vals3);
+    let solved = puzzle.solve();
 
-        if stuck {
-            for i in 0..81 {
-                if hs.contains_key(&i) {
-                    let item: &HashSet<u8> = hs.get(&i).unwrap();
-                    let p = test_for_one_in_row(i as usize, item, &board);
-                    match p {
-                        Some(x) => {
-                            //println!("{} : {}", i, Some(x).unwrap());
-                            board[i as usize] = Some(x).unwrap();
-                            stuck = false;
-                            break;
-                        }
-                        None => continue,
-                    }
-                }
-            }
-        }
+    println!("");
+    println!("Solving evil puzzle");
+    puzzle.prn_in();
+    println!("");
+    puzzle.prn_board();
 
-        if stuck {
-            for i in 0..81 {
-                if hs.contains_key(&i) {
-                    let item: &HashSet<u8> = hs.get(&i).unwrap();
-                    let p = test_for_one_in_col(i as usize, item, &board);
-                    match p {
-                        Some(x) => {
-                            //println!("{} : {}", i, Some(x).unwrap());
-                            board[i as usize] = Some(x).unwrap();
-                            stuck = false;
-                            break;
-                        }
-                        None => continue,
-                    }
-                }
-            }
-        }
-
-        hs.clear();
-
-        for i in 0..81 {
-            if board[i] == 0 {
-                hs.insert(i as u8, posibilities(i, &board));
-            }
-        }
-
-        // if stuck {
-        //     for i in 0..81 {
-        //         if hs.contains_key(&i) {
-        //             let item: &HashSet<u8> = hs.get(&i).unwrap();
-        //             for v in item {
-        //                 if test_col(i as usize, *v, &board) {
-        //                     board[i as usize] = *v;
-        //                     stuck = false;
-        //                     break;
-        //                 }
-        //             }
-        //         }
-        //     }
-        // }
-
-        if stuck {
-            break;
-        }
-    }
-
-    if stuck {
-        for i in &output(&board) {
-            println!("{:?}", i);
-        }
-
-        for i in 0..81 {
-            if hs.contains_key(&i) {
-                let mut s: String = "Idx".to_string();
-                s += &format!("[{}] : ", i);
-
-                let item: &HashSet<u8> = hs.get(&i).unwrap();
-                let mut v: Vec<String> = item
-                    .iter()
-                    .map(|c| char::from_digit(*c as u32, 10).unwrap().into())
-                    .collect::<Vec<_>>();
-                v.sort();
-                s += &format!("{}", &v[..].join(", "));
-
-                println!("{s}");
-            }
-        }
-    }
-
-    if !stuck {
-        for i in &vals {
-            println!("{:?}", i);
-        }
-        println!("");
-
-        let out = output(&board);
-        for i in &out {
-            println!("{:?}", i);
-        }
+    if !solved {
+        puzzle.prn_scratch();
     }
 }

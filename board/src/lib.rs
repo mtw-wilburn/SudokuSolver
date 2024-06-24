@@ -1,145 +1,256 @@
+use std::collections::HashMap;
 use std::collections::HashSet;
 
-pub fn create_board(input: &Vec<Vec<char>>) -> Vec<u8> {
-    let mut board: Vec<u8> = Vec::new();
-
-    for row in 0..9 {
-        for col in 0..9 {
-            let val = input[row][col];
-            let val = match val {
-                '.' => 0,
-                _ => (val.to_string()).parse::<u8>().unwrap(),
-            };
-            board.push(val);
-        }
-    }
-    board
+pub struct Puzzle {
+    input: Vec<Vec<char>>,
+    output: Vec<Vec<char>>,
+    board: Vec<usize>,
+    scratch: HashMap<usize, HashSet<usize>>,
 }
 
-pub fn output(board: &Vec<u8>) -> Vec<Vec<char>> {
-    let mut out: Vec<Vec<char>> = Vec::new();
-    for i in 0..9 {
-        let v = get_row(i * 9, board);
-        let x: Vec<char> = v
-            .iter()
-            .map(|c| char::from_digit(*c as u32, 10).unwrap())
-            .collect::<Vec<_>>();
-        out.push(x);
-    }
-    out
-}
-
-pub fn get_row(idx: usize, board: &Vec<u8>) -> Vec<u8> {
-    let b = idx - (idx % 9);
-    let e = b + 9;
-    board[b..e].to_vec()
-}
-
-pub fn get_col(idx: usize, board: &Vec<u8>) -> Vec<u8> {
-    let offset = idx % 9;
-    let mut v: Vec<u8> = Vec::new();
-    for i in 0..9 {
-        v.push(board[offset + (i * 9)])
-    }
-    v
-}
-
-pub fn get_box(idx: usize, board: &Vec<u8>) -> Vec<u8> {
-    let mut offset = idx - (idx % 3);
-    offset = offset - (((offset / 9) % 3) * 9);
-    let mut v: Vec<u8> = Vec::new();
-    for i in 0..3 {
-        for j in 0..3 {
-            v.push(board[(offset + j) + (i * 9)]);
-        }
-    }
-    v
-}
-
-pub fn test_for_one_in_row(idx: usize, set: &HashSet<u8>, board: &Vec<u8>) -> Option<u8> {
-    let b = idx - (idx % 9);
-    let e = b + 9;
-    let mut ret = None;
-    for v in set.iter() {
-        let mut found = true;
-        for i in b..e {
-            if i == idx {
-                continue;
-            }
-            if board[i] != 0u8 {
-                continue;
-            }
-            if posibilities(i, board).contains(v) {
-                found = false;
-                break;
+impl Puzzle {
+    pub fn new(input: &Vec<Vec<char>>) -> Self {
+        let mut b: Vec<usize> = Vec::new();
+        for row in 0..9 {
+            for col in 0..9 {
+                let val = input[row][col];
+                let val = match val {
+                    '.' => 0,
+                    _ => (val.to_string()).parse::<usize>().unwrap(),
+                };
+                b.push(val);
             }
         }
-        if found {
-            ret = Some(*v);
-            break;
+
+        Self {
+            input: input.clone(),
+            output: Vec::new(),
+            board: b,
+            scratch: HashMap::new(),
         }
     }
-    ret
-}
 
-pub fn test_for_one_in_col(idx: usize, set: &HashSet<u8>, board: &Vec<u8>) -> Option<u8> {
-    let offset = idx % 9;
+    pub fn prn_in(&self) {
+        for i in &self.input {
+            println!("{:?}", i);
+        }
+    }
 
-    let mut ret = None;
-    for v in set.iter() {
-        let mut found = true;
+    pub fn prn_out(&self) {
+        for i in &self.output {
+            println!("{:?}", i);
+        }
+    }
+
+    pub fn prn_board(&mut self) {
+        self.gen_out();
+        self.prn_out();
+    }
+
+    pub fn prn_scratch(&self) {
+        for i in 0..81 {
+            if self.scratch.contains_key(&i) {
+                let mut s: String = "Idx".to_string();
+                s += &format!("[{}] : ", i);
+
+                let item: &HashSet<usize> = self.scratch.get(&i).unwrap();
+                let mut v: Vec<String> = item
+                    .iter()
+                    .map(|c| char::from_digit(*c as u32, 10).unwrap().into())
+                    .collect::<Vec<_>>();
+                v.sort();
+                s += &format!("{}", &v[..].join(", "));
+
+                println!("{s}");
+            }
+        }
+    }
+
+    fn gen_out(&mut self) {
+        let mut b: Vec<Vec<char>> = Vec::new();
         for i in 0..9 {
-            if i == offset {
-                continue;
+            let v = self.row_data(i * 9);
+            let x: Vec<char> = v
+                .iter()
+                .map(|c| {
+                    let mut ch: char = '.';
+                    if *c != 0 {
+                        ch = char::from_digit(*c as u32, 10).unwrap();
+                    }
+                    ch
+                })
+                .collect::<Vec<_>>();
+            b.push(x);
+        }
+        self.output = b;
+    }
+
+    fn row_data(&self, idx: usize) -> Vec<usize> {
+        let b = idx - (idx % 9);
+        let e = b + 9;
+        self.board[b..e].to_vec()
+    }
+
+    fn col_data(&self, idx: usize) -> Vec<usize> {
+        let offset = idx % 9;
+        let mut v: Vec<usize> = Vec::new();
+        for i in 0..9 {
+            v.push(self.board[offset + (i * 9)])
+        }
+        v
+    }
+
+    fn box_data(&self, idx: usize) -> Vec<usize> {
+        let mut offset = idx - (idx % 3);
+        offset = offset - (((offset / 9) % 3) * 9);
+        let mut v: Vec<usize> = Vec::new();
+        for i in 0..3 {
+            for j in 0..3 {
+                v.push(self.board[(offset + j) + (i * 9)]);
             }
-            if board[offset + (i * 9)] != 0u8 {
-                continue;
+        }
+        v
+    }
+
+    fn possibilities(&self, idx: usize) -> HashSet<usize> {
+        let mut hs: HashSet<usize> = vec![1, 2, 3, 4, 5, 6, 7, 8, 9].into_iter().collect();
+        for x in self.row_data(idx) {
+            hs.remove(&x);
+        }
+
+        for x in self.col_data(idx) {
+            hs.remove(&x);
+        }
+
+        for x in self.box_data(idx) {
+            hs.remove(&x);
+        }
+        hs
+    }
+
+    fn rebuild_scratch(&mut self) {
+        self.scratch.clear();
+        for i in 0..81 {
+            if self.board[i] == 0 {
+                self.scratch.insert(i, self.possibilities(i));
             }
-            if posibilities(offset + (i * 9), board).contains(v) {
-                found = false;
-                break;
+        }
+    }
+
+    pub fn solve(&mut self) -> bool {
+        let mut solved = true;
+        self.rebuild_scratch();
+
+        while self.scratch.len() > 0 {
+            if !self.solve_method_1() {
+                if !self.solve_method_2() {
+                    if !self.solve_method_3() {
+                        solved = false;
+                        break;
+                    }
+                }
             }
         }
-        if found {
-            ret = Some(*v);
-            break;
+
+        solved
+    }
+
+    // Just looks for cells with only one possible solution
+    fn solve_method_1(&mut self) -> bool {
+        let mut found = false;
+        self.rebuild_scratch();
+        for (k, v) in &self.scratch {
+            if v.len() == 1 {
+                let vals = v.into_iter().collect::<Vec<_>>();
+                self.board[*k] = *vals[0];
+                found = true;
+            }
         }
+        found
     }
-    ret
-}
 
-pub fn test_col(idx: usize, val: u8, board: &Vec<u8>) -> bool {
-    let offset = idx % 9;
+    // examine each possible solution for a cell, if the empty cells for that row
+    // cannot have that value because their respective cols already contain that value
+    // we've found the only possible value for the cell
+    fn solve_method_2(&mut self) -> bool {
+        let mut found = true;
+        for i in 0..81 {
+            if self.scratch.contains_key(&i) {
+                let b = i - (i % 9);
+                let e = b + 9;
+                let mut r = None;
+                for v in self.scratch.get(&i).unwrap().iter() {
+                    found = true;
+                    for j in b..e {
+                        if j == i {
+                            continue;
+                        } else {
+                            if self.board[j] == 0 {
+                                if self.possibilities(j).contains(v) {
+                                    found = false;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    if found {
+                        r = Some(v);
+                        break;
+                    }
+                }
 
-    let mut ret = true;
-    for i in 0..9 {
-        let ci = offset + (i * 9);
-        if idx == ci {
-            continue;
+                match r {
+                    Some(x) => {
+                        self.board[i] = *Some(x).unwrap();
+                        break;
+                    }
+                    None => continue,
+                }
+            }
         }
-        let p = posibilities(ci, board);
-        if p.contains(&val) {
-            ret = false;
-            break;
+        found
+    }
+
+    // examine each possible solution for a cell, if the empty cells for that col
+    // cannot have that value because their respective rows already contain that value
+    // we've found the only possible value for the cell
+    fn solve_method_3(&mut self) -> bool {
+        let mut found = true;
+        for i in 0..81 {
+            if self.scratch.contains_key(&i) {
+                let offset = i % 9;
+                let mut r = None;
+                for v in self.scratch.get(&i).unwrap().iter() {
+                    found = true;
+                    for j in 0..9 {
+                        if j == offset {
+                            continue;
+                        } else {
+                            if self.board[offset + (j * 9)] == 0 {
+                                if self.possibilities(offset + (j * 9)).contains(v) {
+                                    found = false;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    if found {
+                        r = Some(v);
+                        break;
+                    }
+                }
+
+                match r {
+                    Some(x) => {
+                        self.board[i] = *Some(x).unwrap();
+                        break;
+                    }
+                    None => continue,
+                }
+            }
         }
+        found
     }
-    ret
-}
-
-pub fn posibilities(idx: usize, board: &Vec<u8>) -> HashSet<u8> {
-    let mut hs: HashSet<u8> = vec![1u8, 2, 3, 4, 5, 6, 7, 8, 9].into_iter().collect();
-    for x in &get_row(idx, board) {
-        hs.remove(x);
-    }
-
-    for x in &get_col(idx, board) {
-        hs.remove(x);
-    }
-
-    for x in &get_box(idx, board) {
-        hs.remove(x);
-    }
-    hs
 }
 
 #[cfg(test)]
@@ -163,86 +274,89 @@ mod tests {
 
     #[test]
     fn create() {
-        let board = create_board(&data());
         let want = vec![
             5, 3, 0, 0, 7, 0, 0, 0, 0, 6, 0, 0, 1, 9, 5, 0, 0, 0, 0, 9, 8, 0, 0, 0, 0, 6, 0, 8, 0,
             0, 0, 6, 0, 0, 0, 3, 4, 0, 0, 8, 0, 3, 0, 0, 1, 7, 0, 0, 0, 2, 0, 0, 0, 6, 0, 6, 0, 0,
             0, 0, 2, 8, 0, 0, 0, 0, 4, 1, 9, 0, 0, 5, 0, 0, 0, 0, 8, 0, 0, 7, 9,
         ];
 
-        assert_eq!(81, board.len());
-        assert_eq!(board, want);
+        let p = Puzzle::new(&data());
+
+        assert_eq!(81, p.board.len());
+        assert_eq!(p.board, want);
     }
 
     #[test]
     fn rows() {
-        let board = create_board(&data());
+        let p = Puzzle::new(&data());
         let want = vec![0, 9, 8, 0, 0, 0, 0, 6, 0];
 
-        let row = get_row(18, &board);
+        let row = p.row_data(18);
         assert_eq!(row, want);
 
-        let row = get_row(20, &board);
+        let row = p.row_data(20);
         assert_eq!(row, want);
 
-        let row = get_row(26, &board);
+        let row = p.row_data(26);
         assert_eq!(row, want);
     }
 
     #[test]
     fn cols() {
-        let board = create_board(&data());
+        let p = Puzzle::new(&data());
         let want = vec![5, 6, 0, 8, 4, 7, 0, 0, 0];
 
-        let col = get_col(0, &board);
+        let col = p.col_data(0);
         assert_eq!(col, want);
 
-        let col = get_col(9, &board);
+        let col = p.col_data(9);
         assert_eq!(col, want);
 
-        let col = get_col(72, &board);
+        let col = p.col_data(72);
         assert_eq!(col, want);
 
         let want = vec![7, 9, 0, 6, 0, 2, 0, 1, 8];
-        let col = get_col(31, &board);
+        let col = p.col_data(31);
         assert_eq!(col, want);
     }
 
     #[test]
     fn subbox() {
-        let board = create_board(&data());
+        let p = Puzzle::new(&data());
 
         let want = vec![5, 3, 0, 6, 0, 0, 0, 9, 8];
-        let sbox = get_box(0, &board);
+        let sbox = p.box_data(0);
         assert_eq!(sbox, want);
 
-        let sbox = get_box(2, &board);
+        let sbox = p.box_data(2);
         assert_eq!(sbox, want);
 
-        let sbox = get_box(9, &board);
+        let sbox = p.box_data(9);
         assert_eq!(sbox, want);
 
-        let sbox = get_box(10, &board);
+        let sbox = p.box_data(10);
         assert_eq!(sbox, want);
 
-        let sbox = get_box(19, &board);
+        let sbox = p.box_data(19);
         assert_eq!(sbox, want);
 
-        let sbox = get_box(20, &board);
+        let sbox = p.box_data(20);
         assert_eq!(sbox, want);
 
         let want = vec![0, 0, 0, 4, 1, 9, 0, 8, 0];
-        let sbox = get_box(77, &board);
+        let sbox = p.box_data(77);
         assert_eq!(sbox, want);
     }
 
     #[test]
     fn posible() {
-        let board = create_board(&data());
+        let p = Puzzle::new(&data());
 
         let want = vec![3, 4];
-        let p = posibilities(22, &board);
-        let v: Vec<u8> = p.into_iter().collect();
-        assert_eq!(v, want);
+        let pos = p.possibilities(22);
+        let v: Vec<usize> = pos.into_iter().collect();
+        for x in want {
+            assert!(v.contains(&x));
+        }
     }
 }
