@@ -86,28 +86,25 @@ impl Puzzle {
     }
 
     fn row_data(&self, idx: usize) -> Vec<usize> {
-        let b = idx - (idx % 9);
-        let e = b + 9;
-        self.board[b..e].to_vec()
+        let mut v: Vec<usize> = Vec::new();
+        for i in self.row_indexes(idx) {
+            v.push(self.board[i]);
+        }
+        v
     }
 
     fn col_data(&self, idx: usize) -> Vec<usize> {
-        let offset = idx % 9;
         let mut v: Vec<usize> = Vec::new();
-        for i in 0..9 {
-            v.push(self.board[offset + (i * 9)])
+        for i in self.col_indexes(idx) {
+            v.push(self.board[i])
         }
         v
     }
 
     fn box_data(&self, idx: usize) -> Vec<usize> {
-        let mut offset = idx - (idx % 3);
-        offset = offset - (((offset / 9) % 3) * 9);
         let mut v: Vec<usize> = Vec::new();
-        for i in 0..3 {
-            for j in 0..3 {
-                v.push(self.board[(offset + j) + (i * 9)]);
-            }
+        for i in self.box_indexes(idx) {
+            v.push(self.board[i]);
         }
         v
     }
@@ -137,6 +134,166 @@ impl Puzzle {
         }
     }
 
+    fn row_indexes(&self, idx: usize) -> Vec<usize> {
+        let b = idx - (idx % 9);
+        let e = b + 9;
+        let mut v: Vec<usize> = Vec::new();
+        for i in b..e {
+            v.push(i);
+        }
+        v
+    }
+
+    fn col_indexes(&self, idx: usize) -> Vec<usize> {
+        let offset = idx % 9;
+        let mut v: Vec<usize> = Vec::new();
+        for i in 0..9 {
+            v.push(offset + (i * 9));
+        }
+        v
+    }
+
+    fn box_indexes(&self, idx: usize) -> Vec<usize> {
+        let mut offset = idx - (idx % 3);
+        offset = offset - (((offset / 9) % 3) * 9);
+        let mut v: Vec<usize> = Vec::new();
+        for i in 0..3 {
+            for j in 0..3 {
+                v.push((offset + j) + (i * 9));
+            }
+        }
+        v
+    }
+
+    // Updates the scratch pad for a cell being updated with a particular value.
+    fn update_scratch(&mut self, idx: usize, val: usize, del_idx: bool) {
+        if del_idx {
+            self.scratch.remove(&idx);
+        }
+        for i in self.row_indexes(idx) {
+            let mut empty = false;
+            if let Some(x) = self.scratch.get_mut(&i) {
+                x.remove(&val);
+                if x.len() == 0 {
+                    empty = true;
+                }
+            }
+            if empty {
+                self.scratch.remove(&i);
+            }
+        }
+
+        for i in self.col_indexes(idx) {
+            let mut empty = false;
+            if let Some(x) = self.scratch.get_mut(&i) {
+                x.remove(&val);
+                if x.len() == 0 {
+                    empty = true;
+                }
+            }
+            if empty {
+                self.scratch.remove(&i);
+            }
+        }
+
+        for i in self.box_indexes(idx) {
+            let mut empty = false;
+            if let Some(x) = self.scratch.get_mut(&i) {
+                x.remove(&val);
+                if x.len() == 0 {
+                    empty = true;
+                }
+            }
+            if empty {
+                self.scratch.remove(&i);
+            }
+        }
+    }
+
+    pub fn get_indexes_with_only_two_solutions(&self) -> Vec<usize> {
+        let mut v: Vec<usize> = Vec::new();
+        for i in 0..81 {
+            if let Some(x) = self.scratch.get(&i) {
+                if x.len() == 2 {
+                    v.push(i);
+                }
+            }
+        }
+        v
+    }
+
+    // fn get_row_number(&self, idx: usize) -> usize {}
+    // fn get_col_number(&self, idx: usize) -> usize {}
+    // fn get_box_number(&self, idx: usize) -> usize {}
+    pub fn update_scratch_with_two_solutions(&mut self) -> bool {
+        let mut changed = false;
+        let mut retry = true;
+        while retry {
+            retry = false;
+            let list = self.get_indexes_with_only_two_solutions();
+            for i in 0..list.len() {
+                let a = self.scratch.get(&list[i]).unwrap().clone();
+                for j in 0..list.len() {
+                    if i == j {
+                        continue;
+                    }
+                    let b = self.scratch.get(&list[j]).unwrap().clone();
+                    let diff: HashSet<_> = a.difference(&b).collect();
+                    if diff.len() == 0 {
+                        if self.row_indexes(list[i]).contains(&list[j]) {
+                            for x in self.row_indexes(list[i]) {
+                                if x == list[i] || x == list[j] {
+                                    continue;
+                                }
+                                if let Some(set) = self.scratch.get_mut(&x) {
+                                    for val in a.iter() {
+                                        retry = set.remove(val);
+                                        if retry {
+                                            changed = true;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        if self.col_indexes(list[i]).contains(&list[j]) {
+                            for x in self.col_indexes(list[i]) {
+                                if x == list[i] || x == list[j] {
+                                    continue;
+                                }
+                                if let Some(set) = self.scratch.get_mut(&x) {
+                                    for val in a.iter() {
+                                        retry = set.remove(val);
+                                        if retry {
+                                            changed = true;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        if self.box_indexes(list[i]).contains(&list[j]) {
+                            for x in self.box_indexes(list[i]) {
+                                if x == list[i] || x == list[j] {
+                                    continue;
+                                }
+                                if let Some(set) = self.scratch.get_mut(&x) {
+                                    for val in a.iter() {
+                                        retry = set.remove(val);
+                                        if retry {
+                                            changed = true;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        changed
+    }
+
     pub fn solve(&mut self) -> bool {
         let mut solved = true;
         self.rebuild_scratch();
@@ -145,8 +302,10 @@ impl Puzzle {
             if !self.solve_method_1() {
                 if !self.solve_method_2() {
                     if !self.solve_method_3() {
-                        solved = false;
-                        break;
+                        if !self.update_scratch_with_two_solutions() {
+                            solved = false;
+                            break;
+                        }
                     }
                 }
             }
@@ -157,13 +316,30 @@ impl Puzzle {
 
     // Just looks for cells with only one possible solution
     fn solve_method_1(&mut self) -> bool {
+        // let mut found = false;
+        // for (k, v) in &self.scratch {
+        //     if v.len() == 1 {
+        //         let vals = v.into_iter().collect::<Vec<_>>();
+        //         self.board[*k] = *vals[0];
+        //         found = true;
+        //     }
+        // }
+        // found
+
         let mut found = false;
-        self.rebuild_scratch();
-        for (k, v) in &self.scratch {
-            if v.len() == 1 {
-                let vals = v.into_iter().collect::<Vec<_>>();
-                self.board[*k] = *vals[0];
-                found = true;
+        for i in 0..81 {
+            if self.scratch.contains_key(&i) {
+                if self.scratch.get(&i).unwrap().len() == 1 {
+                    let v = self
+                        .scratch
+                        .get(&i)
+                        .unwrap()
+                        .into_iter()
+                        .collect::<Vec<_>>()[0];
+                    self.board[i] = *v;
+                    self.update_scratch(i, *v, true);
+                    found = true;
+                }
             }
         }
         found
@@ -202,6 +378,7 @@ impl Puzzle {
                 match r {
                     Some(x) => {
                         self.board[i] = *Some(x).unwrap();
+                        self.update_scratch(i, *Some(x).unwrap(), true);
                         break;
                     }
                     None => continue,
@@ -223,7 +400,7 @@ impl Puzzle {
                 for v in self.scratch.get(&i).unwrap().iter() {
                     found = true;
                     for j in 0..9 {
-                        if j == offset {
+                        if i == offset + (j * 9) {
                             continue;
                         } else {
                             if self.board[offset + (j * 9)] == 0 {
@@ -243,6 +420,7 @@ impl Puzzle {
                 match r {
                     Some(x) => {
                         self.board[i] = *Some(x).unwrap();
+                        self.update_scratch(i, *Some(x).unwrap(), true);
                         break;
                     }
                     None => continue,
