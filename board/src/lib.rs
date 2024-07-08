@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::collections::HashSet;
 
 pub struct Puzzle {
+    prn_methods: bool,
     input: Vec<Vec<char>>,
     output: Vec<Vec<char>>,
     board: Vec<usize>,
@@ -9,7 +10,7 @@ pub struct Puzzle {
 }
 
 impl Puzzle {
-    pub fn new(input: &Vec<Vec<char>>) -> Self {
+    pub fn new(input: &Vec<Vec<char>>, pm: bool) -> Self {
         let mut b: Vec<usize> = Vec::new();
         for row in 0..9 {
             for col in 0..9 {
@@ -23,6 +24,7 @@ impl Puzzle {
         }
 
         Self {
+            prn_methods: pm,
             input: input.clone(),
             output: Vec::new(),
             board: b,
@@ -365,6 +367,9 @@ impl Puzzle {
 
     // Just looks for cells with a solution set with only one value
     fn solve_method_1(&mut self) -> bool {
+        if self.prn_methods {
+            println!("Calling Solve Method 1");
+        }
         let mut found = false;
         for i in 0..81 {
             if self.scratch.contains_key(&i) {
@@ -388,6 +393,9 @@ impl Puzzle {
     // cannot have that value because their respective cols already contain that value
     // we've found the only possible value for the cell
     fn solve_method_2(&mut self) -> bool {
+        if self.prn_methods {
+            println!("Calling Solve Method 2");
+        }
         let mut found = true;
         for i in 0..81 {
             if self.scratch.contains_key(&i) {
@@ -431,6 +439,9 @@ impl Puzzle {
     // cannot have that value because their respective rows already contain that value
     // we've found the only possible value for the cell
     fn solve_method_3(&mut self) -> bool {
+        if self.prn_methods {
+            println!("Calling Solve Method 3");
+        }
         let mut found = true;
         for i in 0..81 {
             if self.scratch.contains_key(&i) {
@@ -473,6 +484,9 @@ impl Puzzle {
     //by examining all the cells in that sub-box.  By checking if out of
     //all possibilities is there a cell with one unique possible solution
     fn solve_method_4(&mut self) -> bool {
+        if self.prn_methods {
+            println!("Calling Solve Method 4");
+        }
         let mut changed = false;
         let mut retry = true;
         while retry {
@@ -516,6 +530,9 @@ impl Puzzle {
     //rows/cols/sub-boxes.  By checking if either of them have two cells with
     //only two possibilities which are the same.
     fn solve_method_5(&mut self) -> bool {
+        if self.prn_methods {
+            println!("Calling Solve Method 5");
+        }
         let mut changed = false;
         let mut retry = true;
         while retry {
@@ -587,6 +604,9 @@ impl Puzzle {
     //Similar to method_5.  Except we will try and reduce the possible solution set by examining
     //sub-boxes where we can determine the three values for sub-rows or sub-cols.
     fn solve_method_6(&mut self) -> bool {
+        if self.prn_methods {
+            println!("Calling Solve Method 6");
+        }
         //TODO:
         //For each sub-row if each cell is empty and the total of possible solutions is 5
         //  - Then do a union on the three cells, if the count is 3 then these three cells have to
@@ -663,6 +683,9 @@ impl Puzzle {
     }
 
     fn solve_method_7(&mut self) -> bool {
+        if self.prn_methods {
+            println!("Calling Solve Method 7");
+        }
         let mut changed = false;
 
         for i in 0..81 {

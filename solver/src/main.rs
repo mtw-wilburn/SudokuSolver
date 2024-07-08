@@ -54,40 +54,37 @@ fn main() {
         vec!['.', '.', '.', '8', '.', '1', '.', '.', '.'],
     ];
 
-    let mut puzzle = Puzzle::new(&vals1);
-    puzzle.solve();
-
+    let mut puzzle = Puzzle::new(&vals1, false);
     println!("Solving difficult puzzle");
-    puzzle.prn_in();
-    println!("");
-    puzzle.prn_board();
-
-    puzzle = Puzzle::new(&vals2);
     puzzle.solve();
-
+    puzzle.prn_in();
     println!("");
+    puzzle.prn_board();
+    println!("");
+
+    puzzle = Puzzle::new(&vals2, false);
     println!("Solving expert puzzle");
+    puzzle.solve();
     puzzle.prn_in();
     println!("");
     puzzle.prn_board();
-
-    puzzle = Puzzle::new(&vals3);
-    let solved = puzzle.solve();
-
     println!("");
+
+    puzzle = Puzzle::new(&vals3, false);
     println!("Solving master puzzle");
+    puzzle.solve();
     puzzle.prn_in();
     println!("");
     puzzle.prn_board();
-
-    puzzle = Puzzle::new(&vals4);
-    let solved = puzzle.solve();
-
     println!("");
+
+    puzzle = Puzzle::new(&vals4, false);
     println!("Solving evil puzzle");
+    let solved = puzzle.solve();
     puzzle.prn_in();
     println!("");
     puzzle.prn_board();
+    println!("");
 
     if !solved {
         puzzle.prn_scratch();
