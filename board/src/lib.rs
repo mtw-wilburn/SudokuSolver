@@ -183,7 +183,7 @@ impl Puzzle {
         v
     }
 
-    pub fn box_indexes(&self, idx: usize) -> Vec<usize> {
+    fn box_indexes(&self, idx: usize) -> Vec<usize> {
         let mut offset = idx - (idx % 3);
         offset = offset - (((offset / 9) % 3) * 9);
         let mut v: Vec<usize> = Vec::new();
@@ -315,7 +315,7 @@ impl Puzzle {
         changed
     }
 
-    pub fn get_indexes_with_solutions(&self) -> Vec<usize> {
+    fn get_indexes_with_solutions(&self) -> Vec<usize> {
         let mut v: Vec<usize> = Vec::new();
         for i in 0..81 {
             if let Some(_x) = self.scratch.get(&i) {
@@ -325,7 +325,7 @@ impl Puzzle {
         v
     }
 
-    pub fn get_indexes_with_two_item_solutions(&self) -> Vec<usize> {
+    fn get_indexes_with_two_item_solutions(&self) -> Vec<usize> {
         let mut v: Vec<usize> = Vec::new();
         for i in 0..81 {
             if let Some(x) = self.scratch.get(&i) {
@@ -586,7 +586,7 @@ impl Puzzle {
 
     //Similar to method_5.  Except we will try and reduce the possible solution set by examining
     //sub-boxes where we can determine the three values for sub-rows or sub-cols.
-    pub fn solve_method_6(&mut self) -> bool {
+    fn solve_method_6(&mut self) -> bool {
         //TODO:
         //For each sub-row if each cell is empty and the total of possible solutions is 5
         //  - Then do a union on the three cells, if the count is 3 then these three cells have to
@@ -662,7 +662,7 @@ impl Puzzle {
         changed
     }
 
-    pub fn solve_method_7(&mut self) -> bool {
+    fn solve_method_7(&mut self) -> bool {
         let mut changed = false;
 
         for i in 0..81 {

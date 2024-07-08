@@ -91,14 +91,5 @@ fn main() {
 
     if !solved {
         puzzle.prn_scratch();
-        // let list = puzzle.get_indexes_with_two_item_solutions();
-        let list = puzzle.get_indexes_with_solutions();
-        // println!("{:?}", list);
-        let list = puzzle.get_indexes_with_solutions();
-        // println!("{:?}", list);
-
-        let mut sub = puzzle.box_indexes(66);
-        sub.sort();
-        println!("{:?}", sub);
     }
 }
